@@ -115,7 +115,7 @@ jobs:
     needs: discover
     if: needs.discover.outputs.has_work == 'true'
 
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 360
 
     permissions:
@@ -134,7 +134,7 @@ jobs:
       FRIDA_TAG: ${{ matrix.tag }}
       IOS_CERTID: "-"
       MACOS_CERTID: "-"
-      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       HOMEBREW_NO_AUTO_UPDATE: "1"
 
     steps:
@@ -165,10 +165,39 @@ jobs:
 
       - name: Prepare hosted runner
         run: |
+          set -euo pipefail
+
           test "$(uname -m)" = arm64
-          test -d "$DEVELOPER_DIR"
+
+          if [[ ! -d "$DEVELOPER_DIR" ]]; then
+            echo "::error::Requested Xcode is missing: $DEVELOPER_DIR"
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-path
+          xcrun --sdk iphoneos clang++ --version
+
+          # Current bundled libc++ requires AppleClang 21.0+
+          # (Xcode 26.4+). Test the compiler, not the app's filename.
+          probe="$RUNNER_TEMP/frida-compiler-check.cpp"
+
+          cat > "$probe" <<'EOF'
+          #ifndef __apple_build_version__
+          #error Expected Apple Clang from Xcode
+          #elif (__apple_build_version__ / 10000) < 2100
+          #error Frida's bundled libc++ requires AppleClang 21.0 / Xcode 26.4 or newer
+          #endif
+          int main() { return 0; }
+          EOF
+
+          xcrun --sdk iphoneos clang++ \
+            -arch arm64 \
+            -std=c++20 \
+            -fsyntax-only \
+            "$probe"
+
           brew install make dpkg
           command -v gmake
           command -v dpkg-deb
