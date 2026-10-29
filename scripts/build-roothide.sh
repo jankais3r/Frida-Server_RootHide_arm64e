@@ -73,12 +73,11 @@ for arch in arm64 arm64e; do
     -Dfrida_swift=disabled \
     -Dfrida_qml=disabled \
     -Dbindir=usr/bin \
-    -Dlibdir=usr/lib \
+    -Dlibdir=lib \
     -Dfrida-gum:tests=disabled \
     -Dfrida-core:tests=disabled \
     -Dfrida-core:assets=installed \
-    -Dfrida-core:compat=disabled \
-    "-Dfrida-core:asset_path_template=/var/jb/usr/lib/$agent_dir"
+    -Dfrida-core:compat=disabled
 
   # Only the agent is required from the arm64 build.
   gmake frida-agent
