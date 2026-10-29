@@ -133,7 +133,7 @@ codesign --verify --verbose "$agent"
 
 # Explicit architecture checks.
 test "$(lipo -archs "$server")" = "arm64e"
-lipo -verify_arch arm64 arm64e "$agent"
+lipo "$agent" -verify_arch arm64 arm64e
 
 deb="$out/frida_${version}_iphoneos-arm64e.deb"
 
@@ -154,8 +154,8 @@ test -f "$unpacked/Library/LaunchDaemons/re.frida.server.plist"
 test ! -d "$unpacked/var/jb"
 
 test "$(lipo -archs "$unpacked/usr/sbin/frida-server")" = "arm64e"
-lipo -verify_arch arm64 arm64e \
-  "$unpacked/usr/lib/$agent_dir/frida-agent.dylib"
+lipo "$unpacked/usr/lib/$agent_dir/frida-agent.dylib" \
+  -verify_arch arm64 arm64e
 
 codesign --verify "$unpacked/usr/sbin/frida-server"
 codesign --verify "$unpacked/usr/lib/$agent_dir/frida-agent.dylib"
