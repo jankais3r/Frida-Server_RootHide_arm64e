@@ -2,7 +2,8 @@ name: Frida RootHide arm64e
 
 on:
   schedule:
-    - cron: "17,47 * * * *"
+    # Once daily at 06:17 UTC.
+    - cron: "17 6 * * *"
 
   workflow_dispatch:
     inputs:
@@ -10,6 +11,7 @@ on:
         description: "Upstream Frida version; blank means latest stable"
         required: false
         type: string
+
 
 permissions:
   contents: read
@@ -34,6 +36,7 @@ jobs:
           REQUESTED_TAG: ${{ inputs.tag }}
           FRIDA_SINCE: ${{ vars.FRIDA_SINCE }}
         with:
+          retries: 3
           script: |
             const upstream = { owner: "frida", repo: "frida" };
             const manual = context.eventName === "workflow_dispatch";
@@ -58,7 +61,7 @@ jobs:
 
               const releases = await github.paginate(
                 github.rest.repos.listReleases,
-                { ...upstream, per_page: 100 }
+                { ...upstream, per_page: 20 }
               );
 
               candidates = releases.filter(r =>
@@ -80,7 +83,7 @@ jobs:
 
             const published = await github.paginate(
               github.rest.repos.listReleases,
-              { ...context.repo, per_page: 100 }
+              { ...context.repo, per_page: 20 }
             );
             const byTag = new Map(published.map(r => [r.tag_name, r]));
 
